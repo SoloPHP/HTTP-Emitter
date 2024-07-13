@@ -1,0 +1,24 @@
+{
+  "name": "solophp/http-emitter",
+  "type": "library",
+  "description": "PSR-7 HTTP Response Emitter",
+  "keywords": ["php","psr-7","http","response","emitter"],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Vitaliy Olos",
+      "email": "vedastudio@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Solo\\": "Solo/"
+    }
+  },
+  "require": {
+    "php": ">=7.4",
+    "psr/http-message": "^1.1|^2.0"
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}
