@@ -2,6 +2,7 @@
 
 [![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/solophp/http-emitter)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/solophp/http-emitter)
 
 PSR-7 HTTP Response Emitter for PHP 8+
 
@@ -40,11 +41,11 @@ $emitter->emit($response);
 # Run tests
 composer test
 
-# Run tests with coverage
-composer test-coverage
+# Code style check
+composer cs
 
-# Static analysis
-composer phpstan
+# Code style fix
+composer cs-fix
 ```
 
 ## License

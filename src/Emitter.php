@@ -1,11 +1,14 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Solo\HttpEmitter;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
+use Solo\Contracts\Http\EmitterInterface;
 
-class Emitter
+class Emitter implements EmitterInterface
 {
     public function __construct(
         private readonly int $responseChunkSize = 4096
@@ -117,4 +120,4 @@ class Emitter
 
         return $stream->eof();
     }
-} 
+}

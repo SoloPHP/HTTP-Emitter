@@ -22,16 +22,18 @@
   },
   "require": {
     "php": "^8.0",
-    "psr/http-message": "^1.1|^2.0"
+    "psr/http-message": "^1.1|^2.0",
+    "solophp/contracts": "^1.0"
   },
   "require-dev": {
-    "phpunit/phpunit": "^10.0",
-    "phpstan/phpstan": "^1.10"
+    "phpunit/phpunit": "^12.0",
+    "phpstan/phpstan": "^2.0.0",
+    "squizlabs/php_codesniffer": "^4.0"
   },
   "scripts": {
     "test": "phpunit",
-    "test-coverage": "phpunit --coverage-html coverage",
-    "phpstan": "phpstan analyse src/"
+    "cs": "phpcs --standard=PSR12 src/ tests/",
+    "cs-fix": "phpcbf --standard=PSR12 src/ tests/"
   },
   "minimum-stability": "dev",
   "prefer-stable": true
