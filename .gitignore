@@ -5,3 +5,7 @@ example
 .idea
 .DS_Store
 Thumbs.db
+
+# Testing
+.phpunit.cache/
+.phpunit.result.cache
