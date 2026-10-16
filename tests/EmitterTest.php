@@ -95,12 +95,12 @@ final class EmitterTest extends TestCase
         $this->assertSame('hello world', $this->emit(new Response(200, [], $body), new Emitter(3)));
     }
 
-    #[TestWith(['5', 'hello'], 'shorter than body')]
-    #[TestWith(['0', ''], 'zero')]
-    #[TestWith(['abc', 'hello world'], 'not a number')]
-    #[TestWith(['-1', 'hello world'], 'negative')]
-    #[TestWith(['1.5', 'hello world'], 'fraction')]
-    #[TestWith(['2, 2', 'hello world'], 'list')]
+    #[TestWith(['5', 'hello'])]
+    #[TestWith(['0', ''])]
+    #[TestWith(['abc', 'hello world'])]
+    #[TestWith(['-1', 'hello world'])]
+    #[TestWith(['1.5', 'hello world'])]
+    #[TestWith(['2, 2', 'hello world'])]
     public function testContentLengthLimitsBody(string $contentLength, string $expected): void
     {
         $response = new Response(200, ['Content-Length' => $contentLength], 'hello world');
@@ -108,10 +108,10 @@ final class EmitterTest extends TestCase
         $this->assertSame($expected, $this->emit($response, new Emitter(2)));
     }
 
-    #[TestWith([100], 'continue')]
-    #[TestWith([204], 'no content')]
-    #[TestWith([205], 'reset content')]
-    #[TestWith([304], 'not modified')]
+    #[TestWith([100])]
+    #[TestWith([204])]
+    #[TestWith([205])]
+    #[TestWith([304])]
     public function testBodilessStatusSkipsBody(int $statusCode): void
     {
         $this->assertSame('', $this->emit(new Response($statusCode, [], 'ignored')));

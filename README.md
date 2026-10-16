@@ -1,6 +1,7 @@
 # HTTP-Emitter
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/solophp/http-emitter.svg)](https://packagist.org/packages/solophp/http-emitter)
+[![Tests](https://github.com/SoloPHP/HTTP-Emitter/actions/workflows/tests.yml/badge.svg)](https://github.com/SoloPHP/HTTP-Emitter/actions/workflows/tests.yml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/solophp/http-emitter)
 
@@ -49,6 +50,13 @@ $container->set(EmitterInterface::class, fn() => new Emitter());
 - No body is sent for `1xx`, `204`, `205` and `304` responses
 - Output stops early if the client disconnects
 - If headers were already sent, only the body is emitted
+
+## Production notes
+
+- Keep `display_errors` off. Any output before `emit()` (a warning, a BOM or blank line before `<?php`, a stray `echo`) makes PHP send its default headers early, and the emitter can then only send the body
+- `emit()` runs after the middleware pipeline, so error-handling middleware doesn't see failures while the body is read. By then the headers are out; log such errors with a global exception handler
+- HEAD requests need no special handling: PHP drops the body of a HEAD response itself, including routes that fall back from HEAD to GET
+- Bodies are sent in chunks, so memory use stays flat for large responses, unless `emit()` runs inside an `ob_start()` without a chunk size
 
 ## Requirements
 
