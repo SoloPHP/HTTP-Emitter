@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Solo\HttpEmitter;
 
+use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\StreamInterface;
 use Solo\Contracts\Http\EmitterInterface;
 
 class Emitter implements EmitterInterface
@@ -13,28 +13,50 @@ class Emitter implements EmitterInterface
     public function __construct(
         private readonly int $responseChunkSize = 4096
     ) {
+        if ($responseChunkSize < 1) {
+            throw new InvalidArgumentException('Response chunk size must be greater than 0');
+        }
     }
 
     public function emit(ResponseInterface $response): void
     {
-        $isEmpty = $this->isResponseEmpty($response);
         if (headers_sent() === false) {
             $this->emitHeaders($response);
+            // Status line goes last: a Location header would otherwise reset the status to 302
             $this->emitStatusLine($response);
         }
 
-        if (!$isEmpty) {
+        if (!$this->isBodilessStatus($response->getStatusCode())) {
             $this->emitBody($response);
         }
+    }
+
+    public function isResponseEmpty(ResponseInterface $response): bool
+    {
+        if ($this->isBodilessStatus($response->getStatusCode())) {
+            return true;
+        }
+
+        $body = $response->getBody();
+
+        if ($body->isSeekable()) {
+            $body->rewind();
+            return $body->read(1) === '';
+        }
+
+        return $body->eof();
     }
 
     private function emitHeaders(ResponseInterface $response): void
     {
         foreach ($response->getHeaders() as $name => $values) {
-            $isSetCookie = strtolower($name) === 'set-cookie';
-            foreach ($values as $index => $value) {
-                $header = sprintf('%s: %s', $name, $value);
-                header($header, $index === 0 && !$isSetCookie);
+            // Numeric header names come back from getHeaders() as int keys
+            $name = (string) $name;
+            $replace = strcasecmp($name, 'Set-Cookie') !== 0;
+
+            foreach ($values as $value) {
+                header($name . ': ' . $value, $replace);
+                $replace = false;
             }
         }
     }
@@ -58,66 +80,34 @@ class Emitter implements EmitterInterface
             $body->rewind();
         }
 
+        $remaining = $this->getContentLength($response) ?? PHP_INT_MAX;
+
+        while ($remaining > 0 && !$body->eof()) {
+            $data = $body->read(min($this->responseChunkSize, $remaining));
+
+            if ($data === '') {
+                break;
+            }
+
+            echo $data;
+            $remaining -= strlen($data);
+
+            if (connection_status() !== CONNECTION_NORMAL) {
+                break;
+            }
+        }
+    }
+
+    private function getContentLength(ResponseInterface $response): ?int
+    {
         $contentLength = $response->getHeaderLine('Content-Length');
-        $amountToRead = $contentLength ? (int) $contentLength : $body->getSize();
 
-        if ($amountToRead && $amountToRead > 0) {
-            $this->emitBodyWithLength($body, $amountToRead);
-        } else {
-            $this->emitBodyWithoutLength($body);
-        }
+        return preg_match('/^\d+$/D', $contentLength) === 1 ? (int) $contentLength : null;
     }
 
-    private function emitBodyWithLength(StreamInterface $body, int $amountToRead): void
+    private function isBodilessStatus(int $statusCode): bool
     {
-        while ($amountToRead > 0 && !$body->eof()) {
-            $length = min($this->responseChunkSize, $amountToRead);
-            $data = $body->read($length);
-
-            if ($data === '') {
-                break;
-            }
-
-            echo $data;
-            $amountToRead -= strlen($data);
-
-            if (connection_status() !== CONNECTION_NORMAL) {
-                break;
-            }
-        }
-    }
-
-    private function emitBodyWithoutLength(StreamInterface $body): void
-    {
-        while (!$body->eof()) {
-            $data = $body->read($this->responseChunkSize);
-
-            if ($data === '') {
-                break;
-            }
-
-            echo $data;
-
-            if (connection_status() !== CONNECTION_NORMAL) {
-                break;
-            }
-        }
-    }
-
-    public function isResponseEmpty(ResponseInterface $response): bool
-    {
-        $statusCode = $response->getStatusCode();
-        if (in_array($statusCode, [204, 205, 304], true)) {
-            return true;
-        }
-
-        $stream = $response->getBody();
-
-        if ($stream->isSeekable()) {
-            $stream->rewind();
-            return $stream->read(1) === '';
-        }
-
-        return $stream->eof();
+        // RFC 9110: 1xx, 204, 205 and 304 responses never carry content
+        return $statusCode < 200 || in_array($statusCode, [204, 205, 304], true);
     }
 }
